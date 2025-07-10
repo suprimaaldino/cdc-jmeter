@@ -1,0 +1,39 @@
+name: Run JMeter ReqRes Tests
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  jmeter-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🔽 Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: ☕️ Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: 🔧 Install JMeter
+      run: |
+        wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz
+        tar -xzf apache-jmeter-5.6.3.tgz
+        echo "JMETER_HOME=$(pwd)/apache-jmeter-5.6.3" >> $GITHUB_ENV
+
+    - name: ▶️ Run JMeter Test Plan
+      run: |
+        $JMETER_HOME/bin/jmeter -n \
+        -t tests/jmeter/reqres_test.jmx \
+        -l logs/result.jtl \
+        -q configs/secret.properties
+
+    - name: 📤 Upload Test Result
+      uses: actions/upload-artifact@v3
+      with:
+        name: jmeter-result
+        path: logs/result.jtl
