@@ -29,12 +29,21 @@ jobs:
 
     - name: ▶️ Run JMeter Test Plan
       run: |
-        mkdir -p logs/html-report
-        $JMETER_HOME/bin/jmeter -n \
+        REPORT_DIR="logs/html-report-$(date -u +%Y%m%d-%H%M)"
+        mkdir -p "$REPORT_DIR"
+        set +e
+        "${JMETER_HOME}/bin/jmeter" -n \
           -t tests/cdc-reqres.jmx \
           -l logs/result.jtl \
           -q configs/secret.properties
-        $JMETER_HOME/bin/jmeter -g logs/result.jtl -o logs/html-report
+        JMETER_EXIT=$?
+        set -e
+        if [ "$JMETER_EXIT" -eq 0 ] && [ -f logs/result.jtl ]; then
+          "${JMETER_HOME}/bin/jmeter" -g logs/result.jtl -o "$REPORT_DIR"
+        else
+          echo "❌ JMeter execution failed or result.jtl missing"
+        fi
+        echo "REPORT_DIR=$REPORT_DIR" >> $GITHUB_ENV
 
     - name: 📤 Upload JMeter Results & Report
       uses: actions/upload-artifact@v4
@@ -42,7 +51,7 @@ jobs:
         name: jmeter-report
         path: |
           logs/result.jtl
-          logs/html-report/
+          ${{ env.REPORT_DIR }}/
         compression-level: 6
         if-no-files-found: warn
 
@@ -53,11 +62,13 @@ jobs:
         [ "${{ job.status }}" != "success" ] && STATUS="❌ JMeter test failed"
         
         TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
+        RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         MESSAGE=$(cat <<EOF
         $STATUS
 
         🕒 Completed at: $TIMESTAMP
-        📊 JMeter `.jtl` and HTML report available in artifacts
+        🔗 [View GitHub Run]($RUN_URL)
+        📊 Artifacts: .jtl and HTML report
         EOF
         )
         curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
