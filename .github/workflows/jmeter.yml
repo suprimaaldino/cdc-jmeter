@@ -98,40 +98,6 @@ jobs:
         
         echo "=== End Debug ==="
 
-    - name: 📊 Extract JMeter Metrics
-      id: metrics
-      run: |
-        # Ensure logs directory exists
-        mkdir -p logs
-        
-        # Extract metrics with proper error handling
-        if [ -f logs/result.jtl ]; then
-          REQ_COUNT=$(grep -c '<sampleResult' logs/result.jtl 2>/dev/null || echo "0")
-          ERROR_COUNT=$(grep -c 's="false"' logs/result.jtl 2>/dev/null || echo "0")
-        else
-          echo "⚠️ result.jtl not found, setting counts to 0"
-          REQ_COUNT="0"
-          ERROR_COUNT="0"
-        fi
-        
-        # Ensure values are numeric and not empty
-        REQ_COUNT=${REQ_COUNT:-0}
-        ERROR_COUNT=${ERROR_COUNT:-0}
-        
-        # Debug output
-        echo "Total requests found: $REQ_COUNT"
-        echo "Error requests found: $ERROR_COUNT"
-        
-        # Set GitHub outputs using echo method (more compatible)
-        echo "total_requests=${REQ_COUNT}" >> "$GITHUB_OUTPUT"
-        echo "error_requests=${ERROR_COUNT}" >> "$GITHUB_OUTPUT"
-        
-        # Verify outputs were written
-        echo "=== GitHub Outputs ==="
-        echo "total_requests=${REQ_COUNT}"
-        echo "error_requests=${ERROR_COUNT}"
-        echo "====================="
-
     - name: 📢 Telegram Notification (optional)
       if: always()
       run: |
@@ -141,13 +107,14 @@ jobs:
         TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
         RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         
-        # Get metrics with fallback values
-        TOTAL_REQUESTS="${{ steps.metrics.outputs.total_requests }}"
-        ERROR_REQUESTS="${{ steps.metrics.outputs.error_requests }}"
+        # Calculate metrics directly here
+        TOTAL_REQUESTS="0"
+        ERROR_REQUESTS="0"
         
-        # Ensure values are not empty
-        TOTAL_REQUESTS=${TOTAL_REQUESTS:-0}
-        ERROR_REQUESTS=${ERROR_REQUESTS:-0}
+        if [ -f logs/result.jtl ]; then
+          TOTAL_REQUESTS=$(grep -c '<sampleResult' logs/result.jtl 2>/dev/null || echo "0")
+          ERROR_REQUESTS=$(grep -c 's="false"' logs/result.jtl 2>/dev/null || echo "0")
+        fi
         
         MESSAGE=$(cat <<EOF
         $STATUS
