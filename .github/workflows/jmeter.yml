@@ -45,7 +45,7 @@ jobs:
         else
           echo "⚠️ Skipping HTML generation: test failed or no samples"
         fi
-        echo "report_dir=$REPORT_DIR" >> $GITHUB_OUTPUT
+        echo "report_dir=$REPORT_DIR" >> "$GITHUB_OUTPUT"
 
     - name: 📤 Upload JMeter Results & Report
       uses: actions/upload-artifact@v4
@@ -78,9 +78,7 @@ jobs:
       id: metrics
       run: |
         REQ_COUNT=$(grep -c '<sampleResult' logs/result.jtl || echo 0)
-        {
-          echo "total_requests=${REQ_COUNT}"
-        } >> "$GITHUB_OUTPUT"
+        echo "total_requests=${REQ_COUNT}" >> "$GITHUB_OUTPUT"
 
     - name: 📢 Telegram Notification (optional)
       if: always()
@@ -98,8 +96,8 @@ jobs:
         🔗 [View GitHub Run]($RUN_URL)
         📊 Artifacts: .jtl and HTML report
         EOF
-        )
-        curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-          -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-          -d parse_mode="Markdown" \
-          --data-urlencode "text=$MESSAGE"
+                )
+                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+                  -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+                  -d parse_mode="Markdown" \
+                  --data-urlencode "text=$MESSAGE"
