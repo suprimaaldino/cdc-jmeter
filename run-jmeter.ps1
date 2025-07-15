@@ -7,6 +7,6 @@ $jtlName = "run_$(Get-Date -Format 'yyyyMMdd_HHmmss').jtl"
 
 & "D:\apache-jmeter-5.6.3\bin\jmeter.bat" `
   -n `
-  -t "D:\cdc-jmeter\tests\CDC Jmeter.jmx" `
+  -t "D:\cdc-jmeter\tests\cdc-reqres.jmx" `
   -q "D:\cdc-jmeter\configs\secret.properties" `
   -l "$resultsPath\$jtlName"
