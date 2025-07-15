@@ -28,6 +28,7 @@ jobs:
         echo "JMETER_HOME=$(pwd)/apache-jmeter-5.6.3" >> $GITHUB_ENV
 
     - name: ▶️ Run JMeter Test Plan
+      shell: bash
       run: |
         REPORT_DIR="logs/html-report-$(date -u +%Y%m%d-%H%M)"
         mkdir -p "$REPORT_DIR"
@@ -38,10 +39,10 @@ jobs:
           -q configs/secret.properties
         JMETER_EXIT=$?
         set -e
-        if [ "$JMETER_EXIT" -eq 0 ] && [ -f logs/result.jtl ]; then
+        if [ "$JMETER_EXIT" -eq 0 ] && grep -q '<sampleResult' logs/result.jtl; then
           "${JMETER_HOME}/bin/jmeter" -g logs/result.jtl -o "$REPORT_DIR"
         else
-          echo "❌ JMeter execution failed or result.jtl missing"
+          echo "⚠️ Skipping HTML generation: test failed or no samples"
         fi
         echo "REPORT_DIR=$REPORT_DIR" >> $GITHUB_ENV
 
@@ -60,7 +61,7 @@ jobs:
       run: |
         STATUS="✅ JMeter test passed"
         [ "${{ job.status }}" != "success" ] && STATUS="❌ JMeter test failed"
-        
+
         TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
         RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         MESSAGE=$(cat <<EOF
