@@ -114,15 +114,23 @@ jobs:
           ERROR_COUNT="0"
         fi
         
+        # Ensure values are numeric and not empty
+        REQ_COUNT=${REQ_COUNT:-0}
+        ERROR_COUNT=${ERROR_COUNT:-0}
+        
         # Debug output
         echo "Total requests found: $REQ_COUNT"
         echo "Error requests found: $ERROR_COUNT"
         
-        # Set GitHub outputs with proper formatting
-        {
-          echo "total_requests=$REQ_COUNT"
-          echo "error_requests=$ERROR_COUNT"
-        } >> $GITHUB_OUTPUT
+        # Set GitHub outputs using echo method (more compatible)
+        echo "total_requests=${REQ_COUNT}" >> "$GITHUB_OUTPUT"
+        echo "error_requests=${ERROR_COUNT}" >> "$GITHUB_OUTPUT"
+        
+        # Verify outputs were written
+        echo "=== GitHub Outputs ==="
+        echo "total_requests=${REQ_COUNT}"
+        echo "error_requests=${ERROR_COUNT}"
+        echo "====================="
 
     - name: 📢 Telegram Notification (optional)
       if: always()
