@@ -28,7 +28,7 @@ jobs:
     - name: ▶️ Run JMeter Test Plan
       run: |
         $JMETER_HOME/bin/jmeter -n \
-        -t tests/jmeter/reqres_test.jmx \
+        -t tests/cdc-reqres.jmx \
         -l logs/result.jtl \
         -q configs/secret.properties
 
