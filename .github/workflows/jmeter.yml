@@ -28,6 +28,7 @@ jobs:
         echo "JMETER_HOME=$(pwd)/apache-jmeter-5.6.3" >> $GITHUB_ENV
 
     - name: ▶️ Run JMeter Test Plan
+      id: jmeter
       shell: bash
       run: |
         REPORT_DIR="logs/html-report-$(date -u +%Y%m%d-%H%M)"
@@ -44,7 +45,7 @@ jobs:
         else
           echo "⚠️ Skipping HTML generation: test failed or no samples"
         fi
-        echo "REPORT_DIR=$REPORT_DIR" >> $GITHUB_ENV
+        echo "report_dir=$REPORT_DIR" >> $GITHUB_OUTPUT
 
     - name: 📤 Upload JMeter Results & Report
       uses: actions/upload-artifact@v4
@@ -52,7 +53,7 @@ jobs:
         name: jmeter-report
         path: |
           logs/result.jtl
-          ${{ env.REPORT_DIR }}/
+          ${{ steps.jmeter.outputs.report_dir }}/
         compression-level: 6
         if-no-files-found: warn
 
