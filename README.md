@@ -1,0 +1,1 @@
+to run the test: .\run-jmeter.ps1
