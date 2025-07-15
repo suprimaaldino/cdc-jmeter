@@ -56,11 +56,24 @@ jobs:
         compression-level: 6
         if-no-files-found: warn
 
+    - name: 🧹 Cleanup Manual HTML Report (Previous Run)
+      run: |
+        if [ -d logs/manual-html-report ]; then
+          echo "🧼 Removing previous manual-html-report folder"
+          rm -rf logs/manual-html-report
+        fi
+
     - name: 🛠️ Generate Manual HTML Report (Secondary Location)
       if: success()
       run: |
         mkdir -p logs/manual-html-report
         "${JMETER_HOME}/bin/jmeter" -g logs/result.jtl -o logs/manual-html-report
+
+    - name: 📊 Extract JMeter Metrics
+      id: metrics
+      run: |
+        REQ_COUNT=$(grep -c '<sampleResult' logs/result.jtl || echo 0)
+        echo "total_requests=$REQ_COUNT" >> $GITHUB_OUTPUT
 
     - name: 📢 Telegram Notification (optional)
       if: always()
@@ -74,6 +87,7 @@ jobs:
         $STATUS
 
         🕒 Completed at: $TIMESTAMP
+        📨 Total Requests: ${{ steps.metrics.outputs.total_requests }}
         🔗 [View GitHub Run]($RUN_URL)
         📊 Artifacts: .jtl and HTML report
         EOF
