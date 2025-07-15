@@ -79,8 +79,8 @@ jobs:
       run: |
         REQ_COUNT=$(grep -c '<sampleResult' logs/result.jtl 2>/dev/null || echo 0)
         ERROR_COUNT=$(grep -c 's="false"' logs/result.jtl 2>/dev/null || echo 0)
-        echo "total_requests=${REQ_COUNT}" >> $GITHUB_OUTPUT
-        echo "error_requests=${ERROR_COUNT}" >> $GITHUB_OUTPUT
+        echo "total_requests=$REQ_COUNT" >> $GITHUB_OUTPUT
+        echo "error_requests=$ERROR_COUNT" >> $GITHUB_OUTPUT
 
     - name: 📢 Telegram Notification (optional)
       if: always()
