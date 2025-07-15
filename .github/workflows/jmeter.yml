@@ -5,7 +5,7 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '15 8 * * *' 
+    - cron: '15 8 * * *'  # 15:15 WIB (UTC+7)
 
 jobs:
   jmeter-test:
@@ -29,15 +29,38 @@ jobs:
 
     - name: ▶️ Run JMeter Test Plan
       run: |
+        mkdir -p logs/html-report
         $JMETER_HOME/bin/jmeter -n \
-        -t tests/cdc-reqres.jmx \
-        -l logs/result.jtl \
-        -q configs/secret.properties
+          -t tests/cdc-reqres.jmx \
+          -l logs/result.jtl \
+          -q configs/secret.properties
+        $JMETER_HOME/bin/jmeter -g logs/result.jtl -o logs/html-report
 
-    - name: 📤 Upload Test Result
+    - name: 📤 Upload JMeter Results & Report
       uses: actions/upload-artifact@v4
       with:
-        name: jmeter-result
-        path: logs/result.jtl
+        name: jmeter-report
+        path: |
+          logs/result.jtl
+          logs/html-report/
         compression-level: 6
         if-no-files-found: warn
+
+    - name: 📢 Telegram Notification (optional)
+      if: always()
+      run: |
+        STATUS="✅ JMeter test passed"
+        [ "${{ job.status }}" != "success" ] && STATUS="❌ JMeter test failed"
+        
+        TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
+        MESSAGE=$(cat <<EOF
+        $STATUS
+
+        🕒 Completed at: $TIMESTAMP
+        📊 JMeter `.jtl` and HTML report available in artifacts
+        EOF
+        )
+        curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+          -d parse_mode="Markdown" \
+          --data-urlencode "text=$MESSAGE"
