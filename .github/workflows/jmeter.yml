@@ -78,7 +78,9 @@ jobs:
       id: metrics
       run: |
         REQ_COUNT=$(grep -c '<sampleResult' logs/result.jtl || echo 0)
-        echo "total_requests=$REQ_COUNT" >> $GITHUB_OUTPUT
+        {
+          echo "total_requests=${REQ_COUNT}"
+        } >> "$GITHUB_OUTPUT"
 
     - name: 📢 Telegram Notification (optional)
       if: always()
