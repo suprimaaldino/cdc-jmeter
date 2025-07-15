@@ -56,6 +56,12 @@ jobs:
         compression-level: 6
         if-no-files-found: warn
 
+    - name: 🛠️ Generate Manual HTML Report (Secondary Location)
+      if: success()
+      run: |
+        mkdir -p logs/manual-html-report
+        "${JMETER_HOME}/bin/jmeter" -g logs/result.jtl -o logs/manual-html-report
+
     - name: 📢 Telegram Notification (optional)
       if: always()
       run: |
