@@ -74,6 +74,30 @@ jobs:
           echo "⚠️ Skipping manual HTML report: no sample data in result.jtl"
         fi
 
+    - name: 🔍 Debug JMeter Output Files
+      run: |
+        echo "=== Debugging JMeter Output ==="
+        echo "Current directory: $(pwd)"
+        echo "Logs directory exists: $([ -d logs ] && echo 'YES' || echo 'NO')"
+        
+        if [ -d logs ]; then
+          echo "Contents of logs directory:"
+          ls -la logs/ || echo "No files in logs directory"
+        fi
+        
+        echo "Looking for .jtl files in current directory and subdirectories:"
+        find . -name "*.jtl" -type f 2>/dev/null | head -10 || echo "No .jtl files found"
+        
+        if [ -f logs/result.jtl ]; then
+          echo "result.jtl found - file size: $(stat -c%s logs/result.jtl 2>/dev/null || echo 'unknown')"
+          echo "First 5 lines of result.jtl:"
+          head -5 logs/result.jtl || echo "Cannot read file"
+        else
+          echo "⚠️ logs/result.jtl not found"
+        fi
+        
+        echo "=== End Debug ==="
+
     - name: 📊 Extract JMeter Metrics
       id: metrics
       run: |
