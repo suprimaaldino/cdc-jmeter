@@ -68,7 +68,11 @@ jobs:
       if: success()
       run: |
         mkdir -p logs/manual-html-report
-        "${JMETER_HOME}/bin/jmeter" -g logs/result.jtl -o logs/manual-html-report
+        if grep -q '<sampleResult' logs/result.jtl; then
+          "${JMETER_HOME}/bin/jmeter" -g logs/result.jtl -o logs/manual-html-report
+        else
+          echo "⚠️ Skipping manual HTML report: no sample data in result.jtl"
+        fi
 
     - name: 📊 Extract JMeter Metrics
       id: metrics
