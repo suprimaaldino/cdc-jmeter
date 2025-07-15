@@ -77,10 +77,28 @@ jobs:
     - name: 📊 Extract JMeter Metrics
       id: metrics
       run: |
-        REQ_COUNT=$(grep -c '<sampleResult' logs/result.jtl 2>/dev/null || echo 0)
-        ERROR_COUNT=$(grep -c 's="false"' logs/result.jtl 2>/dev/null || echo 0)
-        echo "total_requests=$REQ_COUNT" >> $GITHUB_OUTPUT
-        echo "error_requests=$ERROR_COUNT" >> $GITHUB_OUTPUT
+        # Ensure logs directory exists
+        mkdir -p logs
+        
+        # Extract metrics with proper error handling
+        if [ -f logs/result.jtl ]; then
+          REQ_COUNT=$(grep -c '<sampleResult' logs/result.jtl 2>/dev/null || echo "0")
+          ERROR_COUNT=$(grep -c 's="false"' logs/result.jtl 2>/dev/null || echo "0")
+        else
+          echo "⚠️ result.jtl not found, setting counts to 0"
+          REQ_COUNT="0"
+          ERROR_COUNT="0"
+        fi
+        
+        # Debug output
+        echo "Total requests found: $REQ_COUNT"
+        echo "Error requests found: $ERROR_COUNT"
+        
+        # Set GitHub outputs with proper formatting
+        {
+          echo "total_requests=$REQ_COUNT"
+          echo "error_requests=$ERROR_COUNT"
+        } >> $GITHUB_OUTPUT
 
     - name: 📢 Telegram Notification (optional)
       if: always()
@@ -90,17 +108,32 @@ jobs:
 
         TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
         RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        
+        # Get metrics with fallback values
+        TOTAL_REQUESTS="${{ steps.metrics.outputs.total_requests }}"
+        ERROR_REQUESTS="${{ steps.metrics.outputs.error_requests }}"
+        
+        # Ensure values are not empty
+        TOTAL_REQUESTS=${TOTAL_REQUESTS:-0}
+        ERROR_REQUESTS=${ERROR_REQUESTS:-0}
+        
         MESSAGE=$(cat <<EOF
         $STATUS
 
         🕒 Completed at: $TIMESTAMP
-        📨 Total Requests: ${{ steps.metrics.outputs.total_requests }}
-        ❌ Failed Requests: ${{ steps.metrics.outputs.error_requests }}
+        📨 Total Requests: $TOTAL_REQUESTS
+        ❌ Failed Requests: $ERROR_REQUESTS
         🔗 [View GitHub Run]($RUN_URL)
         📊 Artifacts: .jtl and HTML report
         EOF
         )
-        curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-          -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-          -d parse_mode="Markdown" \
-          --data-urlencode "text=$MESSAGE"
+        
+        # Only send notification if bot token is available
+        if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ] && [ -n "${{ secrets.TELEGRAM_CHAT_ID }}" ]; then
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d parse_mode="Markdown" \
+            --data-urlencode "text=$MESSAGE"
+        else
+          echo "⚠️ Telegram notification skipped: missing bot token or chat ID"
+        fi
